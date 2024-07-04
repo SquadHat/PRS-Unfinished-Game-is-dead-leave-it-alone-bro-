@@ -1,0 +1,435 @@
+--// UIs \\--
+
+local Player = game.Players.LocalPlayer
+local PlayerGui = Player:WaitForChild("PlayerGui")
+
+local function SHG()
+    local SG = Instance.new("ScreenGui")
+    SG.Name = "ShopGui"
+    SG.Parent = PlayerGui
+
+    local TXL = Instance.new("TextLabel")
+    TXL.Name = "ShopLabel"
+    TXL.Size = UDim2.new(0, 200, 0, 50)
+    TXL.Position = UDim2.new(0.5, -100, 0.9, 0)
+    TXL.TextStrokeColor3 = Color3.new(0, 0, 0)
+    TXL.BackgroundTransparency = 1
+    TXL.TextColor3 = Color3.new(0, 1, 0)
+    TXL.Font = 'Jura'
+    TXL.TextSize = 36
+    TXL.Parent = SG
+    return SG, TXL
+end
+
+local function ATXL(TXL)
+    local TX = "SHOP"
+    TXL.Text = ""
+    ShopT = true
+    for i = 1, #TX do
+        TXL.Text = TXL.Text .. TX:sub(i, i)
+        wait(0.05)
+    end
+    wait(0.4)
+    for i = #TX, 1, -1 do
+        TXL.Text = TX:sub(1, i-1)
+        wait(0.05)
+    end
+    TXL.Parent:Destroy()
+end
+
+game:GetService("UserInputService").InputBegan:Connect(function(input, gameProcessedEvent)
+    if not gameProcessedEvent and input.KeyCode.Name == Shop then
+        local ShopShown = game.workspace.Game.ShopShown.Value
+        SShown = not SShown
+        game.workspace.Game.ShopShown.Value = SShown
+
+        if SShown then
+            local PRES = PlayerGui:FindFirstChild("ShopGui")
+            if PRES then
+                PRES:Destroy()
+            end
+            local SG, TXL = SHG()
+            ATXL(TXL)
+        else
+            local ShopV = PlayerGui:FindFirstChild("VisualOverlay"):FindFirstChild("ShopBackground")
+            if ShopV then
+                ShopV.Visible = false
+            end
+        end
+    end
+end)
+
+--// Gamepass \\--
+
+local AList = {
+    [1] = {
+        GamepassID = 781150186,
+        T = "Purifier",
+        IC = "rbxassetid://17116493860"
+    },
+    [2] = {
+        GamepassID = 781033892,
+        T = "Item Sensor",
+        IC = "rbxassetid://17116495208"
+    },
+    [3] = {
+        GamepassID = 780883988,
+        T = "Threat Sensor",
+        IC = "rbxassetid://17116496546"
+    }
+}
+
+local CAIndex = 1
+local KT = true
+
+game:GetService("UserInputService").InputBegan:Connect(function(input, gameProcessedEvent)
+    if not gameProcessedEvent and input.KeyCode.Name == Gamepass then
+        local ST = tick()
+        while game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode[Gamepass]) do
+            if tick() - ST >= 0.4 then                
+                CAIndex = CAIndex % #AList + 1
+                ST = tick()
+                KT = true
+                local CA = AList[CAIndex]
+                game:GetService("StarterGui"):SetCore("SendNotification", {
+                    Title = CA.T,
+                    Text = "",
+                    Icon = CA.IC,
+                    Duration = 0
+                })
+            end
+            wait()
+        end
+    end
+end)
+
+game:GetService("UserInputService").InputBegan:Connect(function(input, gameProcessedEvent)
+    if not gameProcessedEvent and input.KeyCode.Name == Gamepass and KT then
+        local CA = AList[CAIndex]
+        game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("ActionEvent"):FireServer("GrantGamepass", CA.GamepassID)
+    end
+end)
+
+--// Item ESP \\--
+
+local ItemColors = {
+    Detonator = Color3.new(1, 0, 0),
+    Keycard = Color3.new(0, 0, 1),
+    Pistol = Color3.new(192/255, 192/255, 192/255),
+    SMG = Color3.new(220/255, 220/255, 220/255),
+    Stun = Color3.new(0, 1, 1),
+    Shotgun = Color3.new(1, 165/255, 0),
+    Marksman = Color3.new(0, 1, 0),
+    Rifle = Color3.new(1, 69/255, 0),
+    Torch = Color3.new(1, 1, 0),
+    Respirator = Color3.new(135/255, 206/255, 235/255),
+    Vest = Color3.new(220/255, 220/255, 220/255)
+}
+
+local ItemIcons = {
+    Pistol = "17406303928",
+    SMG = "17406372735",
+    Stun = "17406379908",
+    Shotgun = "17406386125",
+    Marksman = "17406393683",
+    Rifle = "17406399207",
+    Torch = "17406407069",
+    Respirator = "17406414438",
+    Vest = "17406418223",
+    Detonator = "17403684545",
+    Keycard = "17406426302",
+    Excavator = "8795332663"
+}
+
+local Modes = {
+    Weaponry = {"Pistol", "SMG", "Stun", "Shotgun", "Marksman", "Rifle", "Torch", "Excavator"},
+    Armory = {"Respirator", "Vest"},
+    Utility = {"Detonator", "Keycard"}
+}
+
+local Mode = "Weaponry"
+
+local ModeIcons = {
+    Weaponry = "3189074890",
+    Armory = "5132909898",
+    Utility = "10829245398"
+}
+
+local ESPType = "Highlight"
+local ESPMode = "Camera"
+
+local ESPIcons = {
+    Nearest = "11605772452",
+    Camera = "11605770678",
+    Highlight = "11738354827",
+    Image = "4669770840"
+}
+
+local HLX = false
+local HLV = {}
+
+local Player = game:GetService("Players").LocalPlayer
+local ScreenW = 1920 * 1.07
+local ScreenH = 1080 * 1.07
+
+local function HLHL(item)
+    if not item:FindFirstChild("ESP") then
+        local HLGui = Instance.new("BillboardGui")
+        HLGui.Name = "ESP"
+        HLGui.Adornee = item
+        HLGui.StudsOffset = Vector3.new(0, 2, 0)
+        HLGui.Size = UDim2.new(0, 30, 0, 60)
+        HLGui.AlwaysOnTop = true
+
+        local HLTX = Instance.new("TextLabel")
+        HLTX.Text = item.Name
+        HLTX.BackgroundTransparency = 1
+        HLTX.Size = UDim2.new(1, 0, 1, 0)
+        HLTX.Font = 'Cartoon'
+        HLTX.Position = UDim2.new(0, 0, 0, 0)
+        HLTX.BorderSizePixel = 0
+        HLTX.FontSize = 2
+        HLTX.Visible = true
+        HLTX.Parent = HLGui
+
+        local HL = Instance.new("Highlight")
+        HL.Name = "ESP"
+        HL.Adornee = item
+        HL.FillColor = ItemColors[item.Name]
+        HL.FillTransparency = 0.5
+        HL.OutlineTransparency = 0.7
+        HL.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+        HL.Parent = item
+        HLV[item] = HL
+
+        local TXColor = {
+            Pistol = Color3.new(192/255, 192/255, 192/255),
+            SMG = Color3.new(0, 0, 255),
+            Stun = Color3.new(0, 0, 255),
+            Shotgun = Color3.new(0, 0, 255),
+            Respirator = Color3.new(0, 0, 255),
+            Vest = Color3.new(0, 0, 255),
+            Detonator = Color3.new(220/255, 20/255, 60/255),
+            Marksman = Color3.new(128, 0, 128),
+            Rifle = Color3.new(128, 0, 128),
+            Keycard = Color3.new(0, 1, 1),
+            Torch = Color3.new(255, 255, 0)
+        }
+        HLTX.TextColor3 = TXColor[item.Name] or Color3.new(255, 255, 255)
+        HLGui.Parent = item
+    end
+end
+
+local function IMIM(item)
+    if not item:FindFirstChild("ESP") then
+        local IMGui = Instance.new("BillboardGui")
+        IMGui.Name = "ESP"
+        IMGui.Adornee = item
+        IMGui.StudsOffset = Vector3.new(0, 2, 0)
+        IMGui.Size = UDim2.new(0, 30, 0, 60)
+        IMGui.AlwaysOnTop = true
+
+        local IML = Instance.new("ImageLabel")
+        IML.Image = "rbxassetid://" .. ItemIcons[item.Name]
+        IML.BackgroundTransparency = 1
+        IML.ImageTransparency = 0.15
+        IML.Size = UDim2.new(1, 0, 0.5, 0)
+        IML.Position = UDim2.new(0, 0, 0.5, 0)
+        IML.Visible = true
+        IML.Parent = IMGui
+
+        local TXL = Instance.new("TextLabel")
+        TXL.Text = item.Name
+        TXL.BackgroundTransparency = 1
+        TXL.Size = UDim2.new(1, 0, 0.5, 0)
+        TXL.Font = 'ArialBold'
+        TXL.Position = UDim2.new(0, 0, 0, 0)
+        TXL.BorderSizePixel = 0
+        TXL.FontSize = 2
+        TXL.Visible = true
+        TXL.Parent = IMGui
+
+        local TXColor = {
+            Pistol = Color3.new(192/255, 192/255, 192/255),
+            SMG = Color3.new(0, 0, 255),
+            Stun = Color3.new(0, 0, 255),
+            Shotgun = Color3.new(0, 0, 255),
+            Respirator = Color3.new(0, 0, 255),
+            Vest = Color3.new(0, 0, 255),
+            Detonator = Color3.new(220/255, 20/255, 60/255),
+            Marksman = Color3.new(128, 0, 128),
+            Rifle = Color3.new(128, 0, 128),
+            Keycard = Color3.new(0, 1, 1),
+            Torch = Color3.new(255, 255, 0)
+        }
+        TXL.TextColor3 = TXColor[item.Name] or Color3.new(255, 255, 255)
+        IMGui.Parent = item
+    end
+end
+
+local function IMG()
+    if not game.workspace:FindFirstChild(Player.Name) and not game.workspace[Player.Name]:FindFirstChild("HumanoidRootPart") then
+        return
+    end
+    for _, item in ipairs(game.workspace.ItemDropFolder.ItemDrops:GetChildren()) do
+        if item:IsA("Part") and table.find(Modes[Mode], item.Name) and HLX then
+            local ItemPos = game.workspace.CurrentCamera:WorldToViewportPoint(item.Position)
+            local magnitude = item.Name == "Torch" and 350 or (item.Name == "Rifle" and 300 or 250)
+            if ESPMode == "Nearest" and (game.workspace[Player.Name].HumanoidRootPart.Position - item.Position).Magnitude <= magnitude or
+                ESPMode == "Camera" and ItemPos.Z > 0 and ItemPos.X > 0 and ItemPos.X < ScreenW and ItemPos.Y > 0 and ItemPos.Y < ScreenH then
+                IMIM(item, item)
+            else
+                local L = item:FindFirstChild("ESP")
+                if L then
+                    L:Destroy()
+                end
+            end
+        end
+    end
+end
+
+local function HLQ()
+    if not game.workspace:FindFirstChild(Player.Name) and not game.workspace[Player.Name]:FindFirstChild("HumanoidRootPart") then
+        return
+    end
+
+    for _, item in ipairs(workspace.ItemDropFolder.ItemDrops:GetChildren()) do
+        if item:IsA("Part") and table.find(Modes[Mode], item.Name) and HLX then
+            local model = item:FindFirstChild(item.Name)
+            if model then
+                local ItemPos = game.workspace.CurrentCamera:WorldToViewportPoint(item.Position)
+                local magnitude = item.Name == "Torch" and 500 or (item.Name == "Rifle" and 350 or 250)
+                if ESPMode == "Nearest" and (game.workspace[Player.Name].HumanoidRootPart.Position - item.Position).Magnitude <= magnitude or
+                   ESPMode == "Camera" and ItemPos.Z > 0 and ItemPos.X > 0 and ItemPos.X < ScreenW and ItemPos.Y > 0 and ItemPos.Y < ScreenH then
+                    HLHL(model)
+                else
+                    local L = model:FindFirstChild("ESP")
+                    if L then
+                        L:Destroy()
+                        HLV[model] = nil
+                    end
+                end
+            end
+        end
+    end
+end
+
+local function THL()
+    HLX = not HLX
+    if ESPConnection then
+        ESPConnection:Disconnect()
+        ESPConnection = nil
+    end
+    for _ = 1, 2 do
+        for _, item in ipairs(game.workspace.ItemDropFolder.ItemDrops:GetDescendants()) do
+            local HLL = item:FindFirstChild("ESP")
+            if HLL then
+                HLL:Destroy()
+            end
+        end
+    end
+    if HLX then
+        if ESPType == "Highlight" then
+            HLQ()
+            ESPConnection = game:GetService("RunService").RenderStepped:Connect(HLQ)
+        elseif ESPType == "Image" then
+            IMG()
+            ESPConnection = game:GetService("RunService").RenderStepped:Connect(IMG)
+        end
+    end
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "ESP",
+        Text = HLX and "Enabled" or "Disabled",
+        Icon = "rbxassetid://" .. (HLX and "17404149742" or "17404152602"),
+        Duration = 0
+    })
+end
+
+game:GetService("UserInputService").InputBegan:Connect(function(input, gameProcessedEvent)
+    if not gameProcessedEvent and input.KeyCode.Name == ItemSwitch then
+        for _ = 1, 2 do
+            for _, item in ipairs(game.workspace.ItemDropFolder.ItemDrops:GetDescendants()) do
+                local HLL = item:FindFirstChild("ESP")
+                if HLL then
+                    HLL:Destroy()
+                end
+            end
+        end
+        local ModeV = {"Weaponry", "Armory", "Utility"}
+        local CIndex = table.find(ModeV, Mode)
+        Mode = ModeV[CIndex % #ModeV + 1]
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = Mode,
+            Text = "Switched to " .. Mode,
+            Icon = "rbxassetid://" .. ModeIcons[Mode],
+            Duration = 0
+        })
+        if ESPType == "Highlight" then
+            HLQ()
+        elseif ESPType == "Image" then
+            IMG()
+        end
+    end
+end)
+
+game:GetService("UserInputService").InputBegan:Connect(function(input, gameProcessedEvent)
+    if not gameProcessedEvent and input.KeyCode.Name == ESPMethod then
+        local ST = tick()
+        while game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode[ESPMethod]) and wait() do
+            if tick() - ST >= 0.7 then
+                ESPMode = ESPMode == "Camera" and "Nearest" or "Camera"
+                ST = tick()
+                game:GetService("StarterGui"):SetCore("SendNotification", {
+                    Title = ESPMode,
+                    Text = "Switched to " .. ESPMode,
+                    Icon = "rbxassetid://" .. ESPIcons[ESPMode],
+                    Duration = 0
+                })
+                if ESPType == "Highlight" then
+                    HLQ()
+                elseif ESPType == "Image" then
+                    IMG()
+                end
+            end
+        end
+    end
+end)
+
+game:GetService("UserInputService").InputBegan:Connect(function(input, gameProcessedEvent)
+    if not gameProcessedEvent and input.KeyCode.Name == ESPGenre then
+        if ESPType == "Image" then
+            ESPType = "Highlight"
+        elseif ESPType == "Highlight" then
+            ESPType = "Image"
+        end
+        if ESPConnection then
+            ESPConnection:Disconnect()
+            ESPConnection = nil
+        end
+        for _ = 1, 2 do
+            for _, item in ipairs(game.workspace.ItemDropFolder.ItemDrops:GetDescendants()) do
+                local HLL = item:FindFirstChild("ESP")
+                if HLL then
+                    HLL:Destroy()
+                end
+            end
+        end
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = ESPType,
+            Text = "Switched to " .. ESPType,
+            Icon = "rbxassetid://" .. ESPIcons[ESPType],
+            Duration = 0
+        })
+        if ESPType == "Image" then
+            ESPConnection = game:GetService("RunService").RenderStepped:Connect(IMG)
+        elseif ESPType == "Highlight" then
+            ESPConnection = game:GetService("RunService").RenderStepped:Connect(HLQ)
+        end
+    end
+end)
+
+game:GetService("UserInputService").InputBegan:Connect(function(input, gameProcessedEvent)
+    if not gameProcessedEvent and input.KeyCode.Name == ESP then
+        THL()
+    end
+end)
